@@ -53,3 +53,6 @@ screenshots/
 # GitHub upload guide (optional)
 GITHUB_UPLOAD.md
 
+# Diagnostic files
+diag*.txt
+
