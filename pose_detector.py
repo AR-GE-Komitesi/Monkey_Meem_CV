@@ -115,17 +115,42 @@ class PoseDetector:
         return frame, pose_name
     
     def _determine_pose(self, pose_results, hand_results, face_results):
-        """Pozu belirler - öncelik: el kaldırma > düşünme > şaşırma > varsayılan"""
+        """Pozu belirler - öncelik: el kaldırma > düşünme > şaşırma > avuç ileri > varsayılan"""
         if self._is_raising_hand(pose_results, hand_results):
             return "raising_hand"
-        
         if self._is_thinking(pose_results, hand_results, face_results):
             return "thinking"
-        
         if self._is_shocking(face_results):
             return "shocking"
-        
+        if self._is_palm_forward(hand_results):
+            return "ironman"
         return "default"
+
+    def _is_palm_forward(self, hand_results):
+        """Bir el havada açık (parmaklar yayılı) - ironman pozu"""
+        if not hand_results.multi_hand_landmarks or len(hand_results.multi_hand_landmarks) != 1:
+            return False
+        
+        hand_landmarks = hand_results.multi_hand_landmarks[0]
+        
+        # Avuç içi merkezi
+        palm_center = hand_landmarks.landmark[self.mp_hands.HandLandmark.WRIST]
+        
+        # Parmaklarının uçları
+        finger_tips = [
+            hand_landmarks.landmark[self.mp_hands.HandLandmark.THUMB_TIP],
+            hand_landmarks.landmark[self.mp_hands.HandLandmark.INDEX_FINGER_TIP],
+            hand_landmarks.landmark[self.mp_hands.HandLandmark.MIDDLE_FINGER_TIP],
+            hand_landmarks.landmark[self.mp_hands.HandLandmark.RING_FINGER_TIP],
+            hand_landmarks.landmark[self.mp_hands.HandLandmark.PINKY_TIP],
+        ]
+        
+        # Parmaklarının açılığını ölç (yatay dağılma)
+        finger_spread = max([abs(tip.x - palm_center.x) for tip in finger_tips])
+        
+        # Basit kural: Parmaklar açık olmalı
+        # finger_spread > 0.05 = parmaklar belirgin şekilde açık
+        return finger_spread > 0.05
     
     def _is_raising_hand(self, pose_results, hand_results):
         """El baş hizasından yukarıda mı"""
