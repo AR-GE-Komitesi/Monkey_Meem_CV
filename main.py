@@ -1,5 +1,6 @@
 """
-Monkey Pose Mimic - Ana uygulama
+Hero Pose Mimic - Ana uygulama
+Kamera ile poz algilayip super kahraman eslestirir
 PyQt5 arayuz + MediaPipe pose detection
 """
 
@@ -83,22 +84,31 @@ except ImportError:
 ASSETS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets')
 
 
-class MonkeyPoseApp(QMainWindow):
-    """Ana uygulama penceresi"""
+class HeroPoseApp(QMainWindow):
+    """Ana uygulama penceresi - Super Kahraman Pose Mimic"""
+
+    # Kahraman renkleri (UI tema)
+    HERO_COLORS = {
+        "ironman_snap": "#FF8F00",  # Altin (Infinity Gauntlet)
+        "ironman":      "#EF5350",  # Kirmizi (Repulsor)
+        "blackpanther": "#AB47BC",  # Mor (vibranium)
+        "spiderman":    "#E53935",  # Kirmizi-mavi
+        "default":      "#4CAF50",  # Yesil
+    }
 
     def __init__(self):
         super().__init__()
 
-        self.setWindowTitle("Monkey Pose Mimic (MediaPipe)")
-        self.setGeometry(100, 100, 1200, 600)
+        self.setWindowTitle("Hero Pose Mimic - Super Kahraman Poz Taklidi")
+        self.setGeometry(100, 100, 1280, 650)
         self.setStyleSheet("""
             QMainWindow {
-                background-color: #2b2b2b;
+                background-color: #1a1a2e;
             }
             QLabel {
-                border: 2px solid #444;
+                border: 2px solid #333;
                 border-radius: 10px;
-                background-color: #1e1e1e;
+                background-color: #16213e;
             }
         """)
 
@@ -111,7 +121,7 @@ class MonkeyPoseApp(QMainWindow):
             print("Kamera baglanamiyor - sadece resimler gosterilecek.")
 
         self.pose_detector = PoseDetector()
-        self.monkey_images = self._load_monkey_images()
+        self.hero_images = self._load_hero_images()
         self.current_pose = "default"
 
         self._setup_ui()
@@ -129,11 +139,12 @@ class MonkeyPoseApp(QMainWindow):
         main_layout.setSpacing(15)
         main_layout.setContentsMargins(15, 15, 15, 15)
 
+        # Sol: Kamera
         left_layout = QVBoxLayout()
         camera_title = QLabel("Canli Kamera")
         camera_title.setFont(QFont("Arial", 14, QFont.Bold))
         camera_title.setAlignment(Qt.AlignCenter)
-        camera_title.setStyleSheet("QLabel { color: #fff; border: none; background: transparent; padding: 5px; }")
+        camera_title.setStyleSheet("QLabel { color: #e0e0e0; border: none; background: transparent; padding: 5px; }")
         camera_title.setMaximumHeight(40)
 
         self.camera_label = QLabel()
@@ -145,52 +156,53 @@ class MonkeyPoseApp(QMainWindow):
         left_layout.addWidget(self.camera_label, 1)
         left_layout.setSpacing(5)
 
+        # Sag: Super Kahraman
         right_layout = QVBoxLayout()
-        monkey_title = QLabel("Maymun Pozu")
-        monkey_title.setFont(QFont("Arial", 14, QFont.Bold))
-        monkey_title.setAlignment(Qt.AlignCenter)
-        monkey_title.setStyleSheet("QLabel { color: #fff; border: none; background: transparent; padding: 5px; }")
-        monkey_title.setMaximumHeight(40)
+        self.hero_title = QLabel("Super Kahraman")
+        self.hero_title.setFont(QFont("Arial", 14, QFont.Bold))
+        self.hero_title.setAlignment(Qt.AlignCenter)
+        self.hero_title.setStyleSheet("QLabel { color: #e0e0e0; border: none; background: transparent; padding: 5px; }")
+        self.hero_title.setMaximumHeight(40)
 
-        self.monkey_label = QLabel()
-        self.monkey_label.setMinimumSize(480, 480)
-        self.monkey_label.setAlignment(Qt.AlignCenter)
-        self.monkey_label.setScaledContents(True)
+        self.hero_label = QLabel()
+        self.hero_label.setMinimumSize(480, 480)
+        self.hero_label.setAlignment(Qt.AlignCenter)
+        self.hero_label.setScaledContents(True)
 
-        self.pose_name_label = QLabel("Normal Durus")
-        self.pose_name_label.setFont(QFont("Arial", 12))
+        self.pose_name_label = QLabel("Bir Super Kahraman Pozu Yap!")
+        self.pose_name_label.setFont(QFont("Arial", 13, QFont.Bold))
         self.pose_name_label.setAlignment(Qt.AlignCenter)
         self.pose_name_label.setStyleSheet("QLabel { color: #4CAF50; border: none; background: transparent; padding: 5px; }")
-        self.pose_name_label.setMaximumHeight(35)
+        self.pose_name_label.setMaximumHeight(40)
 
-        right_layout.addWidget(monkey_title, 0)
-        right_layout.addWidget(self.monkey_label, 1)
+        right_layout.addWidget(self.hero_title, 0)
+        right_layout.addWidget(self.hero_label, 1)
         right_layout.addWidget(self.pose_name_label, 0)
         right_layout.setSpacing(5)
 
-        main_layout.addLayout(left_layout, 60)
-        main_layout.addLayout(right_layout, 40)
+        main_layout.addLayout(left_layout, 55)
+        main_layout.addLayout(right_layout, 45)
 
-        self._update_monkey_image("default")
+        self._update_hero_image("default")
 
-    def _load_monkey_images(self):
-        """Maymun resimlerini yukle (mutlak yol)"""
+    def _load_hero_images(self):
+        """Super kahraman resimlerini yukle"""
         assets_dir = Path(ASSETS_DIR)
         images = {}
         pose_files = {
-            "raising_hand": "raising_hand_pose.jpg",
-            "shocking": "shocking_pose.jpg",
-            "thinking": "thinking_pose.jpg",
-            "default": "default_pose.jpg",
-            "ironman": "ironman.jpg",
+            "ironman_snap": "c.jpg",
+            "ironman":      "ironman.jpg",
+            "blackpanther": "black-panther-a4ad45f2c272490cbf8d569e0bd0bf85.jpg",
+            "spiderman":    "b.jpg",
         }
-        for pose, filename in pose_files.items():
+        for hero, filename in pose_files.items():
             image_path = assets_dir / filename
             if image_path.exists():
-                images[pose] = str(image_path)
+                images[hero] = str(image_path)
+                print(f"[Gorsel] {hero.upper()} yuklendi: {filename}")
             else:
                 print(f"Uyari: {image_path} bulunamadi!")
-                images[pose] = None
+                images[hero] = None
         return images
 
     def _update_frame(self):
@@ -213,28 +225,54 @@ class MonkeyPoseApp(QMainWindow):
 
         if pose_name != self.current_pose:
             self.current_pose = pose_name
-            self._update_monkey_image(pose_name)
+            self._update_hero_image(pose_name)
 
-    def _update_monkey_image(self, pose_name):
-        """Maymun resmini guncelle"""
-        image_path = self.monkey_images.get(pose_name)
+    def _update_hero_image(self, pose_name):
+        """Super kahraman resmini guncelle"""
+        image_path = self.hero_images.get(pose_name)
+        color = self.HERO_COLORS.get(pose_name, "#4CAF50")
 
         if image_path:
             pixmap = QPixmap(image_path)
-            self.monkey_label.setPixmap(pixmap)
+            self.hero_label.setPixmap(pixmap)
+            self.hero_label.setStyleSheet(
+                f"QLabel {{ border: 3px solid {color}; border-radius: 10px; background-color: #16213e; }}")
         else:
-            self.monkey_label.setText(f"{pose_name}\n\n(Resim bulunamadi)")
-            self.monkey_label.setStyleSheet(
-                "QLabel { color: #ff9800; font-size: 16px; border: 2px dashed #444; }")
+            # Default: bekleme ekrani
+            self.hero_label.clear()
+            self.hero_label.setText(
+                "Bir poz yap!\n\n"
+                "Parmak Siklat  =  Iron Man (Snap)\n"
+                "Avuc Acik Kaldir  =  Iron Man (Repulsor)\n"
+                "Kollar Capraz  =  Black Panther\n"
+                "Ag Atma Isareti  =  Spider-Man"
+            )
+            self.hero_label.setStyleSheet(
+                "QLabel { color: #aaa; font-size: 18px; border: 2px dashed #444; "
+                "border-radius: 10px; background-color: #16213e; }")
 
-        pose_names = {
-            "raising_hand": "Isaret Parmagi Yukarida",
-            "shocking": "Agiz Acik (Saskinlik)",
-            "thinking": "El Yuzde (Dusunme)",
-            "default": "Normal Durus",
-            "ironman": "Avuc Ileri (Stop Pozu)",
+        # Kahraman adi ve poz aciklamasi
+        hero_info = {
+            "ironman_snap": ("IRON MAN", "I Am Iron Man! (Parmak Siklama)"),
+            "ironman":      ("IRON MAN", "Repulsor Blast (Avuc Acik Kaldir)"),
+            "blackpanther": ("BLACK PANTHER", "Wakanda Forever (Kollar Capraz)"),
+            "spiderman":    ("SPIDER-MAN", "Web Shooter (Ag Atma Isareti)"),
+            "default":      ("", "Bir Super Kahraman Pozu Yap!"),
         }
-        self.pose_name_label.setText(pose_names.get(pose_name, pose_name))
+        hero_name, pose_desc = hero_info.get(pose_name, ("", pose_name))
+
+        if hero_name:
+            self.hero_title.setText(hero_name)
+            self.hero_title.setStyleSheet(
+                f"QLabel {{ color: {color}; border: none; background: transparent; padding: 5px; }}")
+        else:
+            self.hero_title.setText("Super Kahraman")
+            self.hero_title.setStyleSheet(
+                "QLabel { color: #e0e0e0; border: none; background: transparent; padding: 5px; }")
+
+        self.pose_name_label.setText(pose_desc)
+        self.pose_name_label.setStyleSheet(
+            f"QLabel {{ color: {color}; border: none; background: transparent; padding: 5px; }}")
 
     def closeEvent(self, event):
         """Kaynaklari temizle"""
@@ -249,7 +287,7 @@ def main():
     app = QApplication(sys.argv)
     app.setStyle("Fusion")
 
-    window = MonkeyPoseApp()
+    window = HeroPoseApp()
     window.show()
 
     sys.exit(app.exec_())

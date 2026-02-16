@@ -2,7 +2,7 @@
 chcp 65001 >nul
 echo.
 echo =====================================
-echo   Monkey Pose Mimic
+echo   Hero Pose Mimic - Super Kahraman
 echo =====================================
 echo.
 

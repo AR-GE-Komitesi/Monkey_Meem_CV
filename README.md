@@ -1,18 +1,18 @@
-# 🐵 Monkey Pose Mimic
+# 🦸 Hero Pose Mimic
 
-Real-time pose detection ile etkileşimli maymun taklit uygulaması.
+Real-time pose detection ile etkileşimli süper kahraman taklit uygulaması.
 
 ---
 
 ## 🎯 Nedir?
 
-Kamera önünde verdiğiniz pozları algılayan ve ekrandaki maymun karakteriyle taklit eden masaüstü uygulaması.
+Kamera önünde verdiğiniz pozları algılayan ve ekrandaki süper kahraman görseli ile eşleştiren masaüstü uygulaması.
 
-**Desteklenen Pozlar:**
-- ☝️ El kaldırma
-- 😲 Şaşırma (ağız açık)
-- 🤔 Düşünme (el yüzde)
-- 😊 Varsayılan duruş
+**Desteklenen Süper Kahramanlar:**
+- ⚡ **Thor** — El yukarı kaldırma (Mjolnir pozu)
+- 🤖 **Iron Man** — Avuç ileri (Repulsor blast)
+- 🐾 **Black Panther** — Kollar göğüste çapraz (Wakanda Forever)
+- 🕷️ **Spider-Man** — Ağız açık / şaşırma (Spider-Sense)
 
 ---
 
@@ -25,8 +25,8 @@ Kamera önünde verdiğiniz pozları algılayan ve ekrandaki maymun karakteriyle
 
 ### 2. Projeyi indirin
 ```bash
-git clone https://github.com/beyzatanriverdi/monkey_pose_mimic
-cd monkey-pose-mimic
+git clone https://github.com/beyzatanriverdi/hero_pose_mimic
+cd hero-pose-mimic
 ```
 
 ### 3. Kütüphaneleri yükleyin
@@ -63,12 +63,16 @@ py -3.12 main.py
 ## 📁 Proje Yapısı
 
 ```
-monkey-pose-mimic/
+hero-pose-mimic/
 ├── main.py              # Ana uygulama
-├── pose_detector.py     # Pose algılama
+├── pose_detector.py     # Pose algılama (4 kahraman)
 ├── requirements.txt     # Bağımlılıklar
 ├── calistir.bat        # Başlatma scripti
-└── assets/             # Maymun görselleri
+└── assets/             # Süper kahraman görselleri
+    ├── b.jpg           # Thor
+    ├── ironman.jpg     # Iron Man
+    ├── black-panther-*.jpg  # Black Panther
+    └── c.jpg           # Spider-Man
 ```
 
 ## 👨‍💻 Geliştiriciler
