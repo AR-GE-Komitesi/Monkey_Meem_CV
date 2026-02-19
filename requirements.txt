@@ -1,8 +1,8 @@
-opencv-python>=4.8.0
-mediapipe>=0.10.0
-PyQt5>=5.15.0
-numpy>=1.24.0
+opencv-python>=4.8.0,<5.0.0
+mediapipe>=0.10.0,<1.0.0
+PyQt5>=5.15.0,<6.0.0
+numpy>=1.24.0,<3.0.0
 
-# NOT: MediaPipe sadece Python 3.12 ve altında çalışır
-# Python 3.13+ için Python 3.12 kurmanız gerekir
+# NOT: MediaPipe Python 3.10, 3.11, 3.12 ile çalışır
+# Python 3.13+ DESTEKLENMEZ — calistir.bat bunu otomatik yönetir
 

@@ -6,6 +6,7 @@ __pycache__/
 .Python
 env/
 venv/
+.venv/
 ENV/
 build/
 develop-eggs/
@@ -52,7 +53,4 @@ screenshots/
 
 # GitHub upload guide (optional)
 GITHUB_UPLOAD.md
-
-# Diagnostic files
-diag*.txt
 

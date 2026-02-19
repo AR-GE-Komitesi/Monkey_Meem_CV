@@ -1,0 +1,23 @@
+services:
+  monkey-pose:
+    build: .
+    image: monkey-pose-mimic:latest
+
+    environment:
+      # DISPLAY: hangi ekrana çizileceğini söyler
+      # Linux/WSL2: otomatik ($DISPLAY)  |  Windows: host.docker.internal:0.0
+      - DISPLAY=${DISPLAY:-:0}
+      - QT_X11_NO_MITSHM=1
+      - PYTHONUNBUFFERED=1
+
+    volumes:
+      # X11 soketi — Linux ve WSL2 için gerekli (Windows'ta yok sayılır)
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+
+    network_mode: host
+
+    # ── Kamera erişimi (sadece Linux / WSL2) ─────────────────────────────────
+    # Windows Docker Desktop'ta çalışmaz; kamera hatası diyalog olarak görünür.
+    # WSL2 + usbipd-win kullanıyorsanız aşağıdaki iki satırı açın:
+    # devices:
+    #   - /dev/video0:/dev/video0

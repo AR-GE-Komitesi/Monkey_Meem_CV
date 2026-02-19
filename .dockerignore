@@ -1,0 +1,24 @@
+# Sanal ortam
+.venv/
+
+# Git geçmişi (gereksiz, büyük)
+.git/
+
+# Python derleme artıkları
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# IDE / OS artıkları
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Loglar
+*.log
+
+# Geliştirici notları (image'e girmesine gerek yok)
+PYTHON_3.12_KURULUM.md
+screenshots/

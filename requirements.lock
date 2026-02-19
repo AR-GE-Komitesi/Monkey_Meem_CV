@@ -1,0 +1,23 @@
+# Bu dosya "bende çalışıyordu" hatasını önler.
+# Test edilip çalıştığı doğrulanan tam sürümlerdir.
+# Güncelleme yapmak istersen: calistir.bat --upgrade (veya pip freeze > requirements.lock)
+#
+# Python: 3.10 / 3.11 / 3.12  (3.13+ DESTEKLENMEZ)
+# Test tarihi: 2026-02-19
+
+# --- Ana bağımlılıklar ---
+mediapipe==0.10.5
+opencv-python==4.13.0.90
+PyQt5==5.15.11
+numpy==2.3.5
+
+# --- Mediapipe'ın gerektirdiği ---
+absl-py==2.4.0
+attrs==25.4.0
+cffi==2.0.0
+flatbuffers==25.12.19
+protobuf==3.20.3
+
+# --- PyQt5'in gerektirdiği ---
+PyQt5-Qt5==5.15.2
+PyQt5_sip==12.18.0
