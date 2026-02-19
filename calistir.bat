@@ -6,7 +6,7 @@ cd /d "%~dp0"
 
 echo.
 echo =======================================
-echo   Monkey Pose Mimic
+echo   Hero Pose Mimic - Super Kahraman
 echo =======================================
 echo.
 

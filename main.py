@@ -4,81 +4,174 @@ Kamera ile poz algilayip super kahraman eslestirir
 PyQt5 arayuz + MediaPipe pose detection
 """
 
+# ─── Bootstrap ───────────────────────────────────────────────────────────────
+# main.py doğrudan çalıştırılsa bile:
+#   1. Python sürümü yanlışsa uyumlu olanı bulur, yoksa otomatik indirir/kurar
+#   2. .venv yoksa oluşturur
+#   3. Paketler yoksa requirements.lock'tan kurar
+#   4. Her şey hazır olunca bu scripti .venv Python'u ile yeniden başlatır
+# ─────────────────────────────────────────────────────────────────────────────
+
 import sys
+import subprocess
+import platform
+from pathlib import Path
+
+
+def _find_compatible_python():
+    """Python 3.12 → 3.11 → 3.10 sırasıyla arar, bulunanın tam yolunu döner."""
+    for version in ["3.12", "3.11", "3.10"]:
+        if platform.system() == "Windows":
+            cmd = ["py", f"-{version}", "-c", "import sys; print(sys.executable)"]
+        else:
+            cmd = [f"python{version}", "-c", "import sys; print(sys.executable)"]
+        try:
+            r = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+            if r.returncode == 0:
+                path = r.stdout.strip()
+                if path and Path(path).exists():
+                    print(f"[OK] Python {version} bulundu: {path}")
+                    return path
+        except (FileNotFoundError, subprocess.TimeoutExpired):
+            continue
+    return None
+
+
+def _install_python_311():
+    """Windows'ta Python 3.11'i winget ile, yoksa sessiz installer ile kurar."""
+    if platform.system() != "Windows":
+        return None
+
+    print("[KURULUM] winget ile Python 3.11 kuruluyor...")
+    r = subprocess.run([
+        "winget", "install", "Python.Python.3.11",
+        "--silent", "--accept-package-agreements", "--accept-source-agreements",
+    ])
+    if r.returncode == 0:
+        found = _find_compatible_python()
+        if found:
+            return found
+
+    print("[KURULUM] winget başarısız, installer indiriliyor (~27 MB)...")
+    return _download_python_311()
+
+
+def _download_python_311():
+    """python.org'dan Python 3.11 installer indir ve sessizce kur."""
+    import urllib.request
+    import tempfile
+    import urllib.error
+
+    url       = "https://www.python.org/ftp/python/3.11.11/python-3.11.11-amd64.exe"
+    installer = Path(tempfile.gettempdir()) / "python-3.11.11-amd64.exe"
+
+    try:
+        def _progress(count, block, total):
+            if total > 0:
+                pct = min(count * block * 100 // total, 100)
+                print(f"\r  %{pct:3d} indiriliyor...", end="", flush=True)
+        urllib.request.urlretrieve(url, str(installer), _progress)
+        print()
+    except urllib.error.URLError as e:
+        print(f"\n[HATA] İndirme başarısız: {e}")
+        return None
+
+    print("[KURULUYOR] Python 3.11 kuruluyor (birkaç dakika sürebilir)...")
+    r = subprocess.run([
+        str(installer), "/quiet",
+        "InstallAllUsers=0", "PrependPath=1",
+        "Include_test=0", "Include_doc=0",
+    ])
+    try:
+        installer.unlink()
+    except OSError:
+        pass
+
+    if r.returncode == 0:
+        print("[OK] Python 3.11 kuruldu")
+        return _find_compatible_python()
+
+    print(f"[HATA] Kurulum başarısız (kod: {r.returncode})")
+    return None
+
+
+def _fatal(msg):
+    print("\n" + "=" * 60)
+    print("HATA:", msg)
+    print("=" * 60)
+    input("\nÇıkmak için Enter'a basın...")
+    sys.exit(1)
+
+
+def _bootstrap():
+    SCRIPT_DIR  = Path(__file__).parent.resolve()
+    VENV_DIR    = SCRIPT_DIR / ".venv"
+    IS_WIN      = platform.system() == "Windows"
+    VENV_PYTHON = str(VENV_DIR / ("Scripts/python.exe" if IS_WIN else "bin/python"))
+    REQ_FILE    = SCRIPT_DIR / "requirements.lock"
+    if not REQ_FILE.exists():
+        REQ_FILE = SCRIPT_DIR / "requirements.txt"
+
+    # ── Zaten bu projenin .venv'i içinde mi? → Doğrudan devam et ────────────
+    if Path(sys.executable).resolve() == Path(VENV_PYTHON).resolve():
+        return
+
+    # ── Mevcut Python uyumlu mu? ─────────────────────────────────────────────
+    ver = sys.version_info
+    if (3, 10) <= (ver.major, ver.minor) <= (3, 12):
+        target_python = sys.executable
+    else:
+        print(f"[UYARI] Python {ver.major}.{ver.minor} desteklenmiyor (gerekli: 3.10–3.12)")
+        target_python = _find_compatible_python()
+        if not target_python:
+            print("[KURULUM] Uyumlu Python bulunamadı, Python 3.11 kuruluyor...")
+            target_python = _install_python_311()
+        if not target_python:
+            _fatal(
+                "Python 3.11 kurulamadı!\n"
+                "Lütfen https://www.python.org/ftp/python/3.11.11/python-3.11.11-amd64.exe\n"
+                "adresinden indirip kurun, ardından bu scripti tekrar çalıştırın."
+            )
+
+    # ── .venv oluştur (yoksa) ────────────────────────────────────────────────
+    if not Path(VENV_PYTHON).exists():
+        print("[KURULUM] Sanal ortam oluşturuluyor...")
+        r = subprocess.run([target_python, "-m", "venv", str(VENV_DIR)])
+        if r.returncode != 0:
+            _fatal("Sanal ortam oluşturulamadı!")
+        print("[OK] Sanal ortam hazır")
+
+    # ── Paketleri kur (yoksa) ────────────────────────────────────────────────
+    check = subprocess.run(
+        [VENV_PYTHON, "-c", "import mediapipe, cv2, PyQt5, numpy"],
+        capture_output=True,
+    )
+    if check.returncode != 0:
+        print("[KURULUM] Paketler yükleniyor (ilk kurulumda ~2-3 dk sürebilir)...")
+        r = subprocess.run([VENV_PYTHON, "-m", "pip", "install", "--upgrade", "pip", "-q"])
+        if r.returncode != 0:
+            _fatal("pip güncellenemedi!")
+        r = subprocess.run([VENV_PYTHON, "-m", "pip", "install", "-r", str(REQ_FILE)])
+        if r.returncode != 0:
+            _fatal("Paketler yüklenemedi! İnternet bağlantısını kontrol edin.")
+        print("[OK] Paketler hazır\n")
+
+    # ── Bu scripti .venv Python'u ile yeniden başlat ─────────────────────────
+    print("[BAŞLATILIYOR] Uygulama başlatılıyor...\n")
+    result = subprocess.run([VENV_PYTHON, str(Path(__file__).resolve())] + sys.argv[1:])
+    sys.exit(result.returncode)
+
+
+_bootstrap()
+# ─── Bootstrap sonu ──────────────────────────────────────────────────────────
+
 import os
 import cv2
 import threading
-from pathlib import Path
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QLabel
 from PyQt5.QtCore import QTimer, Qt
 from PyQt5.QtGui import QImage, QPixmap, QFont
-
-
-def _open_camera_worker(result, index, backend):
-    """Kamerayi ayri thread'de ac (hang onleme)"""
-    try:
-        cap = cv2.VideoCapture(index, backend)
-        result.append(cap)
-    except Exception:
-        pass
-
-
-def open_camera_safe(index=0, timeout=20):
-    """Kamera acmayi timeout ile dene - hang ederse None dondur"""
-    backends = [cv2.CAP_MSMF, cv2.CAP_DSHOW, cv2.CAP_ANY]
-    print(f"[Kamera] Acilisi baslatiliyor (timeout={timeout}s)...")
-    
-    for backend in backends:
-        backend_name = {cv2.CAP_MSMF: "MSMF", cv2.CAP_DSHOW: "DSHOW", cv2.CAP_ANY: "ANY"}.get(backend, str(backend))
-        print(f"[Kamera] {backend_name} backend'i deneniyor...")
-        
-        result = []
-        t = threading.Thread(target=_open_camera_worker, args=(result, index, backend), daemon=True)
-        t.start()
-        t.join(timeout)
-        
-        if t.is_alive():
-            print(f"[Kamera] {backend_name} timeout oldu, sonraki deneniyor...")
-            continue
-        
-        if result and result[0].isOpened():
-            print(f"[Kamera] BASARILI: {backend_name} backend'i ile acildi!")
-            return result[0]
-        
-        if result:
-            try:
-                result[0].release()
-            except:
-                pass
-        
-        print(f"[Kamera] {backend_name} acalamadi")
-    
-    print("[Kamera] HATA: Hicbir backend ile acalamadi!")
-    return None
-
-try:
-    from pose_detector import PoseDetector
-    print("MediaPipe ile pose detection aktif!")
-except ImportError:
-    print("=" * 60)
-    print("HATA: MediaPipe bulunamadi!")
-    print("=" * 60)
-    print(f"Python versiyonu: {sys.version}")
-    print()
-    print("MediaPipe sadece Python 3.12 ve altinda calisir.")
-    print("Python 3.13 kullaniyorsaniz:")
-    print()
-    print("1. Python 3.12 yukleyin:")
-    print("   https://www.python.org/ftp/python/3.12.8/python-3.12.8-amd64.exe")
-    print()
-    print("2. Su komutla calistirin:")
-    print("   py -3.12 main.py")
-    print()
-    print("VEYA:")
-    print("   calistir.bat dosyasina cift tiklayin")
-    print()
-    print("=" * 60)
-    sys.exit(1)
+from pose_detector import PoseDetector
 
 # Mutlak yol - hangi dizinden calistirilirsa calistirilsin dogru bulur
 ASSETS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets')
