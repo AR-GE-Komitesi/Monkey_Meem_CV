@@ -1,7 +1,6 @@
 """
-Pose Detection Module - Super Kahraman Edition
+Pose Detection Module
 MediaPipe ile pose, hand ve face detection
-4 kahraman: Iron Man (Snap), Iron Man (Repulsor), Black Panther, Spider-Man
 """
 
 import cv2
@@ -10,10 +9,10 @@ import numpy as np
 
 
 class PoseDetector:
-    """MediaPipe ile pose algilama - 4 super kahraman pozu"""
+    """MediaPipe ile pose algılama - 4 poz: el kaldırma, şaşırma, düşünme, varsayılan"""
     
     def __init__(self):
-        # MediaPipe modullerini baslat
+        # MediaPipe modüllerini başlat
         self.mp_pose = mp.solutions.pose
         self.mp_hands = mp.solutions.hands
         self.mp_face_mesh = mp.solutions.face_mesh
@@ -45,28 +44,14 @@ class PoseDetector:
         
         # Debug bilgileri
         self.debug_info = {
+            'mouth_ratio': 0.0,
+            'hand_height': 0.0,
             'hands_detected': 0,
-            'face_detected': False,
-            'arms_crossed': False,
-            'web_shoot': False,
-            'finger_snap': False,
-            'open_palm': False,
+            'face_detected': False
         }
         
-    def _is_finger_extended(self, hand_landmarks, finger_tip_id, finger_pip_id):
-        """Parmak acik (uzamis) mi kontrol et - tip, pip'den yukarda ise acik"""
-        tip = hand_landmarks.landmark[finger_tip_id]
-        pip = hand_landmarks.landmark[finger_pip_id]
-        return tip.y < pip.y
-    
-    def _is_finger_curled(self, hand_landmarks, finger_tip_id, finger_pip_id):
-        """Parmak kapali (bukulmus) mu kontrol et"""
-        tip = hand_landmarks.landmark[finger_tip_id]
-        pip = hand_landmarks.landmark[finger_pip_id]
-        return tip.y > pip.y
-
     def detect_pose(self, frame):
-        """Frame uzerinde pose detection yapar"""
+        """Frame üzerinde pose detection yapar"""
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         
         # Detection'lar
@@ -74,18 +59,18 @@ class PoseDetector:
         hand_results = self.hands.process(rgb_frame)
         face_results = self.face_mesh.process(rgb_frame)
         
-        # Debug sifirla
+        # Debug sıfırla
         self.debug_info['hands_detected'] = 0
         self.debug_info['face_detected'] = False
-        self.debug_info['arms_crossed'] = False
-        self.debug_info['web_shoot'] = False
-        self.debug_info['finger_snap'] = False
-        self.debug_info['open_palm'] = False
         
-        # Yuz ciz (dudak konturu)
+        # Sadece ağız bölgesi çiz
         if face_results.multi_face_landmarks:
             self.debug_info['face_detected'] = True
             for face_landmarks in face_results.multi_face_landmarks:
+                landmarks = face_landmarks.landmark
+                h, w = frame.shape[:2]
+                
+                # Sadece dudak konturları
                 self.mp_drawing.draw_landmarks(
                     frame,
                     face_landmarks,
@@ -94,7 +79,7 @@ class PoseDetector:
                     connection_drawing_spec=self.mp_drawing.DrawingSpec(color=(0, 255, 255), thickness=1)
                 )
         
-        # Eller ciz
+        # Eller çiz
         if hand_results.multi_hand_landmarks:
             self.debug_info['hands_detected'] = len(hand_results.multi_hand_landmarks)
             for hand_landmarks in hand_results.multi_hand_landmarks:
@@ -106,190 +91,118 @@ class PoseDetector:
                     self.mp_drawing_styles.get_default_hand_connections_style()
                 )
         
-        # Pozu / kahramani belirle
+        # Pozu belirle
         pose_name = self._determine_pose(pose_results, hand_results, face_results)
         
-        # Debug bilgileri goster
+        # Debug bilgileri göster
         y_pos = 30
-        debug_items = [
-            f"Eller: {self.debug_info['hands_detected']}",
-            f"Capraz: {'EVET' if self.debug_info['arms_crossed'] else '-'}",
-            f"Ag Atma: {'EVET' if self.debug_info['web_shoot'] else '-'}",
-            f"Siklama: {'EVET' if self.debug_info['finger_snap'] else '-'}",
-            f"Avuc Acik: {'EVET' if self.debug_info['open_palm'] else '-'}",
-        ]
-        for text in debug_items:
-            cv2.putText(frame, text, (10, y_pos), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (255, 255, 0), 2)
-            y_pos += 25
+        cv2.putText(frame, f"Eller: {self.debug_info['hands_detected']}", 
+                   (10, y_pos), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 0), 2)
+        y_pos += 30
+        cv2.putText(frame, f"Yuz: {'VAR' if self.debug_info['face_detected'] else 'YOK'}", 
+                   (10, y_pos), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 0), 2)
+        y_pos += 30
+        cv2.putText(frame, f"Agiz: {self.debug_info['mouth_ratio']:.3f}", 
+                   (10, y_pos), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 0), 2)
+        y_pos += 30
+        cv2.putText(frame, f"El Yukseklik: {self.debug_info['hand_height']:.3f}", 
+                   (10, y_pos), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 0), 2)
         
-        # Kahraman goster
-        hero_labels = {
-            "ironman_snap": "IRON MAN (SNAP)",
-            "ironman":      "IRON MAN (REPULSOR)",
-            "blackpanther": "BLACK PANTHER",
-            "spiderman":    "SPIDER-MAN",
-            "default":      "Bekleniyor..."
-        }
-        label = hero_labels.get(pose_name, pose_name)
-        cv2.putText(frame, f"Hero: {label}", (10, frame.shape[0] - 20),
-                   cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+        # Poz göster
+        cv2.putText(frame, f"Pose: {pose_name}", (10, frame.shape[0] - 20),
+                   cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
         
         return frame, pose_name
     
     def _determine_pose(self, pose_results, hand_results, face_results):
-        """
-        Pozu belirler - oncelik sirasi:
-        1. Black Panther  -> Kollar goguste capraz (Wakanda Forever)
-        2. Spider-Man     -> Ag atma hareketi (isaret+serce acik, orta+yuzuk kapali)
-        3. Iron Man Snap  -> Parmak siklama (basparmak + orta parmak birlesik)
-        4. Iron Man       -> Avuc acik el yukari kaldirma (repulsor)
-        5. default        -> Hicbiri
-        """
-        if self._is_wakanda_pose(pose_results):
-            return "blackpanther"
-        if self._is_web_shooting(hand_results):
-            return "spiderman"
-        if self._is_finger_snap(hand_results):
-            return "ironman_snap"
-        if self._is_open_palm_raised(pose_results, hand_results):
-            return "ironman"
+        """Pozu belirler - öncelik: el kaldırma > düşünme > şaşırma > varsayılan"""
+        if self._is_raising_hand(pose_results, hand_results):
+            return "raising_hand"
+        
+        if self._is_thinking(pose_results, hand_results, face_results):
+            return "thinking"
+        
+        if self._is_shocking(face_results):
+            return "shocking"
+        
         return "default"
-
-    def _is_wakanda_pose(self, pose_results):
-        """
-        Kollar gogus onunde capraz - Black Panther Wakanda Forever pozu.
-        """
-        if not pose_results.pose_landmarks:
-            return False
-        
-        landmarks = pose_results.pose_landmarks.landmark
-        
-        left_shoulder = landmarks[self.mp_pose.PoseLandmark.LEFT_SHOULDER]
-        right_shoulder = landmarks[self.mp_pose.PoseLandmark.RIGHT_SHOULDER]
-        left_wrist = landmarks[self.mp_pose.PoseLandmark.LEFT_WRIST]
-        right_wrist = landmarks[self.mp_pose.PoseLandmark.RIGHT_WRIST]
-        
-        chest_x = (left_shoulder.x + right_shoulder.x) / 2
-        chest_y = (left_shoulder.y + right_shoulder.y) / 2
-        
-        shoulder_width = abs(left_shoulder.x - right_shoulder.x)
-        if shoulder_width < 0.01:
-            return False
-        
-        left_near = (abs(left_wrist.x - chest_x) < shoulder_width * 0.9 and 
-                     abs(left_wrist.y - chest_y) < shoulder_width * 1.2)
-        right_near = (abs(right_wrist.x - chest_x) < shoulder_width * 0.9 and 
-                      abs(right_wrist.y - chest_y) < shoulder_width * 1.2)
-        
-        wrists_crossed = left_wrist.x > right_wrist.x
-        
-        is_wakanda = left_near and right_near and wrists_crossed
-        self.debug_info['arms_crossed'] = is_wakanda
-        
-        return is_wakanda
     
-    def _is_web_shooting(self, hand_results):
-        """
-        Spider-Man ag atma hareketi:
-        - Isaret parmagi ACIK (uzamis)
-        - Serce parmagi ACIK (uzamis)
-        - Orta parmak KAPALI (bukulmus)
-        - Yuzuk parmagi KAPALI (bukulmus)
-        Tek el yeterli.
-        """
-        if not hand_results.multi_hand_landmarks:
-            return False
-        
-        H = self.mp_hands.HandLandmark
-        
-        for hand_landmarks in hand_results.multi_hand_landmarks:
-            index_extended = self._is_finger_extended(hand_landmarks, H.INDEX_FINGER_TIP, H.INDEX_FINGER_PIP)
-            pinky_extended = self._is_finger_extended(hand_landmarks, H.PINKY_TIP, H.PINKY_PIP)
-            middle_curled = self._is_finger_curled(hand_landmarks, H.MIDDLE_FINGER_TIP, H.MIDDLE_FINGER_PIP)
-            ring_curled = self._is_finger_curled(hand_landmarks, H.RING_FINGER_TIP, H.RING_FINGER_PIP)
-            
-            if index_extended and pinky_extended and middle_curled and ring_curled:
-                self.debug_info['web_shoot'] = True
-                return True
-        
-        return False
-
-    def _is_finger_snap(self, hand_results):
-        """
-        Parmak siklama hareketi (Iron Man Endgame snap):
-        - Basparmak ucu ve orta parmak ucu birbirine cok yakin (siklatma pozisyonu)
-        - Isaret parmagi acik
-        - Yuzuk ve serce serbest
-        Tek el yeterli.
-        """
-        if not hand_results.multi_hand_landmarks:
-            return False
-        
-        H = self.mp_hands.HandLandmark
-        
-        for hand_landmarks in hand_results.multi_hand_landmarks:
-            thumb_tip = hand_landmarks.landmark[H.THUMB_TIP]
-            middle_tip = hand_landmarks.landmark[H.MIDDLE_FINGER_TIP]
-            
-            # Basparmak ile orta parmak arasi mesafe
-            snap_dist = np.sqrt((thumb_tip.x - middle_tip.x)**2 + (thumb_tip.y - middle_tip.y)**2)
-            
-            # Isaret parmagi acik olmali (siklama sirasinda isaret parmak yukari kalkar)
-            index_extended = self._is_finger_extended(hand_landmarks, H.INDEX_FINGER_TIP, H.INDEX_FINGER_PIP)
-            
-            # Basparmak ve orta parmak birlesik + isaret parmak acik
-            if snap_dist < 0.06 and index_extended:
-                self.debug_info['finger_snap'] = True
-                return True
-        
-        return False
-
-    def _is_open_palm_raised(self, pose_results, hand_results):
-        """
-        Avucu acik sekilde tek el kaldirma - Iron Man repulsor pozu:
-        - El omuz hizasinda veya yukarida
-        - Tum parmaklar acik (avuc acik)
-        """
+    def _is_raising_hand(self, pose_results, hand_results):
+        """El baş hizasından yukarıda mı"""
         if not pose_results.pose_landmarks or not hand_results.multi_hand_landmarks:
+            self.debug_info['hand_height'] = 0.0
             return False
         
-        # Sadece tek el olmali (iki el ise baska pozlari karistirabilir)
-        if len(hand_results.multi_hand_landmarks) != 1:
-            return False
-        
-        H = self.mp_hands.HandLandmark
         pose_landmarks = pose_results.pose_landmarks.landmark
+        nose_y = pose_landmarks[self.mp_pose.PoseLandmark.NOSE].y
         
-        # Omuz yuksekligi referans
-        left_shoulder_y = pose_landmarks[self.mp_pose.PoseLandmark.LEFT_SHOULDER].y
-        right_shoulder_y = pose_landmarks[self.mp_pose.PoseLandmark.RIGHT_SHOULDER].y
-        shoulder_y = (left_shoulder_y + right_shoulder_y) / 2
+        for hand_landmarks in hand_results.multi_hand_landmarks:
+            wrist_y = hand_landmarks.landmark[self.mp_hands.HandLandmark.WRIST].y
+            height_diff = nose_y - wrist_y
+            self.debug_info['hand_height'] = height_diff
+            
+            if height_diff > 0.05:
+                return True
         
-        hand_landmarks = hand_results.multi_hand_landmarks[0]
-        wrist = hand_landmarks.landmark[H.WRIST]
-        
-        # El omuz hizasinda veya yukarida mi?
-        hand_raised = wrist.y < shoulder_y + 0.05
-        
-        if not hand_raised:
+        return False
+    
+    def _is_shocking(self, face_results):
+        """Ağız açık mı"""
+        if not face_results.multi_face_landmarks:
+            self.debug_info['mouth_ratio'] = 0.0
             return False
         
-        # Tum 4 parmak acik mi? (basparmak haric, o farkli eksen)
-        index_ext = self._is_finger_extended(hand_landmarks, H.INDEX_FINGER_TIP, H.INDEX_FINGER_PIP)
-        middle_ext = self._is_finger_extended(hand_landmarks, H.MIDDLE_FINGER_TIP, H.MIDDLE_FINGER_PIP)
-        ring_ext = self._is_finger_extended(hand_landmarks, H.RING_FINGER_TIP, H.RING_FINGER_PIP)
-        pinky_ext = self._is_finger_extended(hand_landmarks, H.PINKY_TIP, H.PINKY_PIP)
+        face_landmarks = face_results.multi_face_landmarks[0].landmark
         
-        all_open = index_ext and middle_ext and ring_ext and pinky_ext
+        # Ağız landmark'ları
+        upper_lip = face_landmarks[13].y
+        lower_lip = face_landmarks[14].y
+        forehead = face_landmarks[10].y
+        chin = face_landmarks[152].y
+        face_height = abs(chin - forehead)
         
-        if all_open:
-            self.debug_info['open_palm'] = True
-            return True
+        mouth_opening = abs(lower_lip - upper_lip)
+        mouth_ratio = mouth_opening / face_height if face_height > 0 else 0
+        self.debug_info['mouth_ratio'] = mouth_ratio
+        
+        return mouth_ratio > 0.15
+    
+    def _is_thinking(self, pose_results, hand_results, face_results):
+        """El ağza/çeneye değiyor mu (thinking pozu)"""
+        if not face_results.multi_face_landmarks or not hand_results.multi_hand_landmarks:
+            return False
+        
+        face_landmarks = face_results.multi_face_landmarks[0].landmark
+        
+        # Ağız bölgesi (üst dudak, alt dudak, çene)
+        mouth_points = [
+            face_landmarks[13],   # Üst dudak
+            face_landmarks[14],   # Alt dudak
+            face_landmarks[152],  # Çene
+            face_landmarks[0],    # Ağız merkezi
+        ]
+        
+        for hand_landmarks in hand_results.multi_hand_landmarks:
+            # El parmaklarının uçları
+            finger_tips = [
+                hand_landmarks.landmark[self.mp_hands.HandLandmark.THUMB_TIP],
+                hand_landmarks.landmark[self.mp_hands.HandLandmark.INDEX_FINGER_TIP],
+                hand_landmarks.landmark[self.mp_hands.HandLandmark.MIDDLE_FINGER_TIP],
+            ]
+            
+            # Herhangi bir parmak ağız bölgesine çok yakın mı?
+            for finger_tip in finger_tips:
+                for mouth_point in mouth_points:
+                    distance = np.sqrt((finger_tip.x - mouth_point.x)**2 + (finger_tip.y - mouth_point.y)**2)
+                    
+                    # Threshold çok düşük - neredeyse değmeli
+                    if distance < 0.08:
+                        return True
         
         return False
     
     def release(self):
-        """Kaynaklari serbest birak"""
+        """Kaynakları serbest bırak"""
         self.pose.close()
         self.hands.close()
         self.face_mesh.close()

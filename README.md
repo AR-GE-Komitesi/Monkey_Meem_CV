@@ -1,56 +1,90 @@
-# 🦸 Hero Pose Mimic
+# 🐵 Monkey Pose Mimic
 
-Real-time pose detection ile etkileşimli süper kahraman taklit uygulaması.
+Real-time pose detection ile etkileşimli maymun taklit uygulaması.
 
 ---
 
 ## 🎯 Nedir?
 
-Kamera önünde verdiğiniz pozları algılayan ve ekrandaki süper kahraman görseli ile eşleştiren masaüstü uygulaması.
+Kamera önünde verdiğiniz pozları algılayan ve ekrandaki maymun karakteriyle taklit eden masaüstü uygulaması.
 
-**Desteklenen Süper Kahramanlar:**
-- ⚡ **Thor** — El yukarı kaldırma (Mjolnir pozu)
-- 🤖 **Iron Man** — Avuç ileri (Repulsor blast)
-- 🐾 **Black Panther** — Kollar göğüste çapraz (Wakanda Forever)
-- 🕷️ **Spider-Man** — Ağız açık / şaşırma (Spider-Sense)
-
----
-
-## 🚀 Kurulum
-
-### 1. Python 3.12 kurun
-⚠️ **Önemli:** MediaPipe Python 3.13'te çalışmaz!
-
-📥 [Python 3.12.8 İndir](https://www.python.org/ftp/python/3.12.8/python-3.12.8-amd64.exe)
-
-### 2. Projeyi indirin
-```bash
-git clone https://github.com/beyzatanriverdi/hero_pose_mimic
-cd hero-pose-mimic
-```
-
-### 3. Kütüphaneleri yükleyin
-```bash
-py -3.12 -m pip install opencv-python mediapipe PyQt5 numpy
-```
+**Desteklenen Pozlar:**
+- ☝️ El kaldırma
+- 😲 Şaşırma (ağız açık)
+- 🤔 Düşünme (el yüzde)
+- 😊 Varsayılan duruş
 
 ---
 
-## 💻 Çalıştırma
+## 🚀 Kurulum ve Çalıştırma
 
-**Kolay yol:**
-```bash
-calistir.bat
-```
+### Tek adım (önerilen)
 
-**Manuel:**
+`calistir.bat` dosyasına **çift tıklayın** — gerisini otomatik yapar:
+- Uyumlu Python sürümünü tespit eder
+- Sanal ortam (`.venv`) oluşturur
+- Gereken kütüphaneleri yükler
+- Uygulamayı başlatır
+
+### Gereksinimler
+
+⚠️ **Python 3.10, 3.11 veya 3.12** kurulu olmalı — Python 3.13+ desteklenmez.
+
+Eğer uyumlu Python yoksa:
+
+| Sürüm | İndirme |
+|-------|---------|
+| Python 3.12 (önerilen) | [python-3.12.9-amd64.exe](https://www.python.org/ftp/python/3.12.9/python-3.12.9-amd64.exe) |
+| Python 3.11 | [python-3.11.11-amd64.exe](https://www.python.org/ftp/python/3.11.11/python-3.11.11-amd64.exe) |
+
+> Kurulumda **"Add Python to PATH"** seçeneğini işaretleyin!
+
+### Manuel çalıştırma (isteğe bağlı)
+
 ```bash
-py -3.12 main.py
+# Sanal ortam oluştur
+py -3.12 -m venv .venv
+
+# Kütüphaneleri yükle
+.venv\Scripts\pip install -r requirements.txt
+
+# Çalıştır
+.venv\Scripts\python main.py
 ```
 
 ---
 
-## 🛠️ Teknolojiler
+## � Docker ile Çalıştırma
+
+Python kurmadan, tek komutla çalıştır. Kütüphane sürümleri her ortamda birebir aynı.
+
+### Gereksinimler
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) kurulu ve çalışıyor olmalı
+- **Windows** için ek olarak [VcXsrv](https://sourceforge.net/projects/vcxsrv/) (GUI ekranı için)
+- **Mac** için [XQuartz](https://www.xquartz.org/)
+
+### Çalıştırma
+
+| Platform | Komut |
+|----------|-------|
+| **Windows** | `docker_calistir.bat` dosyasına çift tıkla |
+| **Linux** | `bash docker_calistir.sh` |
+| **Mac** | `bash docker_calistir.sh` |
+
+### Kamera desteği
+
+| Platform | Durum |
+|----------|-------|
+| Linux (native) | ✅ Otomatik |
+| WSL2 + usbipd-win | ✅ [Kurulum rehberi](https://learn.microsoft.com/en-us/windows/wsl/connect-usb) |
+| Windows Docker Desktop | ⚠️ Kamera çalışmaz, GUI açılır ve hata diyaloğu gösterir |
+| Mac | ⚠️ Kamera erişimi yok |
+
+> **Not:** Kamera olmadan uygulama açılır; sadece kamera bulunamadı diyaloğu gösterir.
+
+---
+
+## �🛠️ Teknolojiler
 
 - **Python 3.12** - Ana dil
 - **MediaPipe** - Pose detection
@@ -63,16 +97,12 @@ py -3.12 main.py
 ## 📁 Proje Yapısı
 
 ```
-hero-pose-mimic/
+monkey-pose-mimic/
 ├── main.py              # Ana uygulama
-├── pose_detector.py     # Pose algılama (4 kahraman)
+├── pose_detector.py     # Pose algılama
 ├── requirements.txt     # Bağımlılıklar
 ├── calistir.bat        # Başlatma scripti
-└── assets/             # Süper kahraman görselleri
-    ├── b.jpg           # Thor
-    ├── ironman.jpg     # Iron Man
-    ├── black-panther-*.jpg  # Black Panther
-    └── c.jpg           # Spider-Man
+└── assets/             # Maymun görselleri
 ```
 
 ## 👨‍💻 Geliştiriciler
